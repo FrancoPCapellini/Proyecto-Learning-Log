@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect 
-from .models import Topic
-from .forms import TopicForm # redirect y TopicForm se agregan con los forms, despues de crear forms.py
+from .models import Topic, Entry
+from .forms import TopicForm , EntryForm # redirect y TopicForm se agregan con los forms, despues de crear forms.py
 
 # Create your views here.
 def index(request):
@@ -36,7 +36,7 @@ def new_topic(request):
     Depending on the request, we'll know whether the user is requesting a blank form
     (a GET request) or asking us to process a completed form (a POST request).  
     """
-    if request.method != 'POST': # The request method is a GET or POST
+    if request.method != 'POST': # The request method is a GET or POST, in this case we want its diferent than POST
         # No data submitted; create a blank form. 
         form = TopicForm()
     else:
@@ -50,3 +50,42 @@ def new_topic(request):
     # Display a blank or invalid form.
     context = {'form': form}
     return render(request, 'learning_logs/new_topic.html', context)
+
+def new_entry(request, topic_id):
+    """ Add a new entry for a particular topic. """
+    topic = Topic.objects.get(id = topic_id)
+
+    if request.method != 'POST':
+        # NO data submitted; create a blank form. 
+        form = EntryForm()
+    else:
+        # POST data submitted; process data.
+        form = EntryForm(data = request.POST) # We process the data by making an instance of EntryForm, populated with the POST data from the request object
+        if form.is_valid():
+            new_entry = form.save(commit = False) #  the argument commit=False to tell Django to create 
+                                                  # a new entry object and assign it to new_entry without saving it to the database yet.
+            new_entry.topic = topic # We set the topic attribute of new_entry to the topic we pulled from the database, at beginning. 
+            new_entry.save()
+            return redirect('learning_logs:topic', topic_id = topic_id) # this view renders the topic page and the user should see their new entry.
+    
+    # Display a blank or invalid form.
+    context = {"topic":topic, "form":form}
+    return render(request, 'learning_logs/new_entry.html', context) # This code will execute for a blank form or for a submitted form that is evaluated as invalid
+
+def edit_entry(request, entry_id):
+    """ Edit an existing entry. """
+    entry = Entry.objects.get(id = entry_id)
+    topic = entry.topic
+
+    if request.method != 'POST':
+        # Initial request; pre-fill form with the current entry.
+        form = EntryForm(instance = entry) # This tells django to create the form prefilled with info form the existing entry object.
+    else:
+        # POST data submitted; process data. 
+        form = EntryForm(instance = entry, data = request.POST) # Create a form instance based on the info associated with the existing entry object, updated with data from request.POST
+        if form.is_valid():
+            form.save()
+            return redirect('learning_logs:topic', topic_id = topic.id)
+    
+    context = {'entry': entry, 'topic': topic, 'form': form}
+    return render(request, 'learning_logs/edit_entry.html', context)
