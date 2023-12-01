@@ -63,7 +63,7 @@ def new_entry(request, topic_id):
         form = EntryForm(data = request.POST) # We process the data by making an instance of EntryForm, populated with the POST data from the request object
         if form.is_valid():
             new_entry = form.save(commit = False) #  the argument commit=False to tell Django to create 
-                                                  # a new entry object and assign it to new_entry without saving it to the database yet.
+                                                  #  a new entry object and assign it to new_entry without saving it to the database yet.
             new_entry.topic = topic # We set the topic attribute of new_entry to the topic we pulled from the database, at beginning. 
             new_entry.save()
             return redirect('learning_logs:topic', topic_id = topic_id) # this view renders the topic page and the user should see their new entry.
